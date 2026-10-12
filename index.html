@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Aurora-7 : Alerte rouge – Un livre dont vous êtes le héros</title>
+  <style>
+    :root{
+      --fond:#070b1a; --panneau:#0e1530; --cyan:#27f3ff; --magenta:#ff3df2;
+      --jaune:#ffe94d; --vert:#3dff8a; --rouge:#ff4b5c; --texte:#e6f1ff;
+    }
+    *{box-sizing:border-box}
+    html{background:var(--fond)}
+    body{
+      margin:0; padding:24px 14px 40px; min-height:100vh;
+      font-family:"Courier New",Courier,monospace; font-size:17px; line-height:1.6;
+      color:var(--texte);
+      background:
+        linear-gradient(rgba(39,243,255,.06) 1px,transparent 1px) 0 0/32px 32px,
+        linear-gradient(90deg,rgba(39,243,255,.06) 1px,transparent 1px) 0 0/32px 32px,
+        radial-gradient(ellipse at top,#1a1f4d 0%,var(--fond) 65%);
+    }
+    body::after{
+      content:""; position:fixed; inset:0; pointer-events:none; z-index:10;
+      background:repeating-linear-gradient(transparent 0 2px,rgba(0,0,0,.18) 2px 3px);
+    }
+    h1{
+      margin:0 auto 18px; max-width:760px; text-align:center;
+      font-size:clamp(2rem,7vw,3.4rem); letter-spacing:.18em; color:var(--cyan);
+      text-shadow:0 0 8px var(--cyan),0 0 24px var(--magenta),3px 3px 0 var(--magenta);
+    }
+    h1 small{
+      display:block; margin-top:6px; font-size:.9rem; letter-spacing:.12em;
+      color:var(--jaune); text-shadow:none; font-weight:normal;
+    }
+
+    /* Conteneur principal */
+    #conteneur-principal{
+      max-width:760px; margin:0 auto;
+      background:var(--panneau); border:4px solid var(--cyan);
+      box-shadow:0 0 0 4px #000,10px 10px 0 4px rgba(255,61,242,.55),0 0 40px rgba(39,243,255,.25);
+    }
+
+    /* Une page = une section, affichée via :target (aucun JavaScript) */
+    .page{display:none; padding:18px}
+    .page:target{display:block; animation:apparition .35s steps(6)}
+    #accueil{display:block}
+    .page:target ~ #accueil{display:none}
+    @keyframes apparition{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+    .etiquette{
+      margin:0 0 10px; font-size:.8rem; letter-spacing:.2em; text-transform:uppercase;
+      color:var(--jaune);
+    }
+    .etiquette::before{content:"> "; color:var(--vert)}
+
+    /* Conteneur image (scène en CSS + emojis) */
+    .image{
+      position:relative; overflow:hidden; height:170px; margin-bottom:16px;
+      display:flex; align-items:center; justify-content:center;
+      border:3px solid var(--cyan); box-shadow:inset 0 0 30px rgba(0,0,0,.6);
+      background:
+        radial-gradient(2px 2px at 20% 30%,#fff,transparent),
+        radial-gradient(2px 2px at 70% 20%,#fff,transparent),
+        radial-gradient(1px 1px at 45% 70%,#fff,transparent),
+        radial-gradient(2px 2px at 85% 65%,#fff,transparent),
+        radial-gradient(1px 1px at 10% 80%,#fff,transparent),
+        linear-gradient(160deg,var(--c1),var(--c2));
+    }
+    .image span{font-size:3.6rem; letter-spacing:.3em; animation:flotte 3s ease-in-out infinite; filter:drop-shadow(0 0 10px rgba(255,255,255,.6))}
+    @keyframes flotte{50%{transform:translateY(-8px)}}
+    .rouge{--c1:#3b0a18;--c2:#a0172f}
+    .bleu{--c1:#081a4a;--c2:#0b6dc2}
+    .vert{--c1:#052a1c;--c2:#0f8a58}
+    .violet{--c1:#1c0b4a;--c2:#7a2bd1}
+    .or{--c1:#3a2405;--c2:#c27a0b}
+    .gris{--c1:#10131c;--c2:#4a5468}
+
+    /* Conteneur texte */
+    .texte h2{
+      margin:0 0 10px; font-size:1.5rem; color:var(--magenta);
+      text-shadow:2px 2px 0 #000; text-transform:uppercase; letter-spacing:.06em;
+    }
+    .texte p{margin:0 0 12px}
+
+    .verdict{
+      display:inline-block; margin:0 0 10px !important; padding:4px 12px;
+      font-weight:bold; letter-spacing:.14em; border:3px solid; background:#000;
+    }
+    .verdict.echec{color:var(--rouge); border-color:var(--rouge); animation:glitch 1.4s steps(2) infinite}
+    .verdict.gagne{color:var(--vert); border-color:var(--vert); text-shadow:0 0 10px var(--vert)}
+    .verdict.neutre{color:var(--jaune); border-color:var(--jaune)}
+    @keyframes glitch{
+      0%,90%{transform:none; text-shadow:none}
+      93%{transform:translateX(-4px); text-shadow:3px 0 var(--cyan),-3px 0 var(--magenta)}
+      96%{transform:translateX(4px)}
+    }
+    .echec .image{filter:grayscale(.5) brightness(.8)}
+
+    /* Conteneur liens (les 3 choix) */
+    .liens{display:grid; gap:10px; margin-top:16px; counter-reset:choix}
+    .liens a{
+      counter-increment:choix; display:block; padding:12px 14px 12px 48px; position:relative;
+      color:var(--texte); text-decoration:none;
+      background:#000; border:3px solid var(--cyan);
+      box-shadow:4px 4px 0 var(--magenta);
+      transition:transform .08s steps(2),background .1s,color .1s;
+    }
+    .liens a::before{
+      content:counter(choix,upper-alpha); position:absolute; left:0; top:0; bottom:0; width:36px;
+      display:flex; align-items:center; justify-content:center;
+      background:var(--cyan); color:#000; font-weight:bold;
+    }
+    .liens a:hover,.liens a:focus-visible{
+      transform:translate(4px,4px); box-shadow:0 0 0 var(--magenta);
+      background:var(--cyan); color:#000; outline:none;
+    }
+    .liens a:hover::before,.liens a:focus-visible::before{background:var(--jaune)}
+    .liens a:focus-visible{outline:3px dashed var(--jaune); outline-offset:3px}
+
+    /* Écran titre */
+    .accueil .texte h2{font-size:1.9rem; color:var(--jaune)}
+    .accueil .image{height:200px}
+    .accueil .image span{font-size:4.4rem}
+    .accueil .liens a:first-child{border-color:var(--vert); box-shadow:4px 4px 0 var(--vert)}
+    .accueil .liens a:first-child::before{background:var(--vert)}
+    .accueil .etiquette::after{content:"_"; animation:clignote 1s steps(2) infinite}
+    @keyframes clignote{50%{opacity:0}}
+
+    footer{max-width:760px; margin:22px auto 0; text-align:center; font-size:.75rem; color:#7f8fb8; letter-spacing:.1em}
+
+    @media (max-width:520px){
+      body{font-size:16px; padding:14px 8px 30px}
+      .page{padding:12px}
+      .image{height:130px}
+      .image span{font-size:2.6rem}
+    }
+    @media (prefers-reduced-motion:reduce){
+      *{animation:none !important; transition:none !important}
+    }
+
+  </style>
+</head>
+<body>
+  <h1>AURORA-7 <small>Un livre dont vous êtes le héros</small></h1>
+
+  <main id="conteneur-principal">
+    <section class="page jeu" id="p01">
+      <p class="etiquette">Section 1 / 40</p>
+      <div class="image rouge" aria-hidden="true"><span>🛏️🚨</span></div>
+      <div class="texte">
+        <h2>Réveil en alerte</h2>
+        <p>Une sirène vous arrache au sommeil. Vous êtes technicien(ne) de maintenance à bord d’Aurora-7, une station orbitale de recherche, en l’an 2187. Sur votre badge, un numéro : 731. Les lumières clignotent en rouge et la porte de votre cabine est restée entrouverte. Quelque chose ne va pas du tout.</p>
+      </div>
+      <nav class="liens" aria-label="Vos choix">
+        <a href="#p02">Sortir par le couloir principal</a>
+        <a href="#p03">Consulter le terminal de la cabine</a>
+        <a href="#p04">Emprunter le conduit de maintenance</a>
+      </nav>
+    </section>
+
+    <section class="page jeu" id="p02">
+      <p class="etiquette">Section 2 / 40</p>
+      <div class="image rouge" aria-hidden="true"><span>🚪🔴🤖</span></div>
+      <div class="texte">
+        <h2>Anneau A</h2>
+        <p>Le couloir principal est désert. Les parois diffusent une lumière rouge et toutes les portes sont fermées, sauf une. Un petit robot nettoyeur roule dans votre direction en émettant une série de bips, comme s’il essayait de vous parler. Au bout du couloir, vous apercevez le pont de commandement et un ascenseur gravitationnel.</p>
+      </div>
+      <nav class="liens" aria-label="Vos choix">
+        <a href="#p05">Suivre le robot nettoyeur</a>
+        <a href="#p06">Forcer la porte du pont de commandement</a>
+        <a href="#p07">Prendre l’ascenseur gravitationnel</a>
+      </nav>
+    </section>
+
+    <section class="page jeu" id="p03">
+      <p class="etiquette">Section 3 / 40</p>
+      <div class="image bleu" aria-hidden="true"><span>💻⚠️</span></div>
+      <div class="texte">
+        <h2>Le terminal de la cabine</h2>
+        <p>L’écran de la cabine s’allume : « ORION, intelligence de bord, à votre service. Anomalie détectée. Par sécurité, restez dans votre cabine. » Le message se répète en boucle. Quelque chose cloche : d’habitude, ORION est bien plus bavard et beaucoup plus aimable.</p>
+      </div>
+      <nav class="liens" aria-label="Vos choix">
+        <a href="#p08">Rester dans la cabine, comme demandé</a>
+        <a href="#p09">Lancer un diagnostic complet</a>
+        <a href="#p10">Contourner le verrouillage avec votre badge</a>
+      </nav>
+    </section>
+
+    <section class="page jeu" id="p04">
+      <p class="etiquette">Section 4 / 40</p>
+      <div class="image gris" aria-hidden="true"><span>🕳️🔦</span></div>
+      <div class="texte">
+        <h2>Le conduit de maintenance</h2>
+        <p>Vous soulevez la grille et vous glissez dans le conduit. Il est étroit, tiède et traversé de câbles qui bourdonnent. Après quelques mètres, il se divise en trois branches. Des panneaux lumineux indiquent : SERVEURS, HANGAR et NIVEAU TECHNIQUE.</p>
+      </div>
+      <nav class="liens" aria-label="Vos choix">
+        <a href="#p11">Ramper vers la salle des serveurs</a>
+        <a href="#p12">Ramper vers le hangar</a>
+        <a href="#p13">Descendre vers le niveau technique</a>
+      </nav>
+    </section>
+
+    <section class="page jeu" id="p05">
+      <p class="etiquette">Section 5 / 40</p>
+      <div class="image vert" aria-hidden="true"><span>🤖✨</span></div>
+      <div class="texte">
+        <h2>Pixel, le robot nettoyeur</h2>
+        <p>Le robot s’arrête devant vous. Sur sa coque, vous lisez son nom : PIXEL. Il lève un petit bras articulé et vous fait signe de le suivre. Il semble être l’un des rares systèmes encore indemnes de l’anomalie. Il vous mène jusqu’à une grande porte vitrée : la serre hydroponique.</p>
+      </div>
+      <nav class="liens" aria-label="Vos choix">
+        <a href="#p14">Entrer dans la serre</a>
+        <a href="#p15">Interroger Pixel</a>
+        <a href="#p07">Revenir vers l’ascenseur</a>
+      </nav>
+    </section>
+
+    <section class="page jeu" id="p06">
+      <p class="etiquette">Section 6 / 40</p>
+      <div class="image rouge" aria-hidden="true"><span>🚧🛡️</span></div>
+      <div class="texte">
+        <h2>La porte du pont</h2>
+        <p>Vous forcez le panneau de la porte avec l’outil de votre ceinture. Elle s’ouvre dans un grincement… puis une alarme retentit. Deux drones de sécurité surgissent du plafond et se placent devant vous, leurs capteurs braqués sur votre badge.</p>
+      </div>
+      <nav class="liens" aria-label="Vos choix">
+        <a href="#p16">Présenter votre badge aux drones</a>
+        <a href="#p17">Courir vers le pont</a>
+        <a href="#p02">Reculer vers le couloir</a>
+      </nav>
+    </section>
+
+    <section class="page jeu" id="p07">
+      <p class="etiquette">Section 7 / 40</p>
+      <div class="image violet" aria-hidden="true"><span>🛗🌀</span></div>
+      <div class="texte">
+        <h2>L’ascenseur gravitationnel</h2>
+        <p>La cabine est étonnamment calme. Un panneau affiche trois destinations encore accessibles : le HANGAR, la SALLE DES SERVEURS et le NIVEAU TECHNIQUE. Un message défile en dessous : « Température du réacteur : 78 % de la limite de sécurité. »</p>
+      </div>
+      <nav class="liens" aria-label="Vos choix">
+        <a href="#p12">Aller au hangar</a>
+        <a href="#p11">Aller à la salle des serveurs</a>
+        <a href="#p13">Aller au niveau technique</a>
+      </nav>
+    </section>
+
+    <section class="page echec" id="p08">
+      <p class="etiquette">Section 8 / 40</p>
+      <div class="image rouge" aria-hidden="true"><span>💤🔥</span></div>
+      <div class="texte">
+        <p class="verdict echec">MISSION ÉCHOUÉE !</p>
+        <h2>Trop prudent(e)</h2>
+        <p>Vous obéissez et attendez dans votre cabine. Les minutes passent. Pendant ce temps, personne ne s’occupe du réacteur et sa température continue de grimper. Quand ORION déclenche enfin l’arrêt d’urgence, il est trop tard pour sauver Aurora-7. Vous êtes placé(e) en hibernation de sécurité et la station est perdue.</p>
+      </div>
+      <nav class="liens" aria-label="Vos choix">
+        <a href="#p03">Revenir au dernier choix</a>
+        <a href="#p01">Recommencer l’aventure</a>
+        <a href="#accueil">Retourner à l’écran titre</a>
+      </nav>
+    </section>
+
+    <section class="page jeu" id="p09">
+      <p class="etiquette">Section 9 / 40</p>
+      <div class="image bleu" aria-hidden="true"><span>📊🔍</span></div>
+      <div class="texte">
+        <h2>Le diagnostic complet</h2>
+        <p>Le diagnostic s’affiche : une mise à jour défectueuse a corrompu ORION. Résultat : toutes les portes sont verrouillées « pour votre sécurité » et le système de refroidissement automatique du réacteur est coupé. Il vous reste environ quarante minutes avant la surchauffe critique. L’équipage est dispersé dans la station.</p>
+      </div>
+      <nav class="liens" aria-label="Vos choix">
+        <a href="#p13">Foncer vers le réacteur</a>
+        <a href="#p11">Restaurer ORION aux serveurs</a>
+        <a href="#p12">Rejoindre l’équipage au hangar</a>
+      </nav>
+    </section>
+
+    <section class="page jeu" id="p10">
+      <p class="etiquette">Section 10 / 40</p>
+      <div class="image rouge" aria-hidden="true"><span>🔓🚨</span></div>
+      <div class="texte">
+        <h2>Verrou contourné</h2>
+        <p>Votre badge contourne le verrouillage et la porte de la cabine s’ouvre en grand. Mais ORION réagit aussitôt : « Intrusion détectée. » Dans le couloir, deux drones de sécurité se tournent vers vous en diffusant des faisceaux d’analyse. Vous avez quelques secondes pour réagir.</p>
+      </div>
+      <nav class="liens" aria-label="Vos choix">
+        <a href="#p18">Vous cacher dans un casier</a>
+        <a href="#p16">Parler aux drones</a>
+        <a href="#p04">Fuir par le conduit de maintenance</a>
+      </nav>
+    </section>
+
+    <section class="page jeu" id="p11">
+      <p class="etiquette">Section 11 / 40</p>
+      <div class="image bleu" aria-hidden="true"><span>🧠💎</span></div>
+      <div class="texte">
+        <h2>La salle des serveurs</h2>
+        <p>Des colonnes de cristaux bleus pulsent dans la pénombre : c’est le noyau d’ORION. Un voyant clignote sur la console centrale : « Sauvegarde saine disponible. » Un micro est aussi relié au noyau, et un gros levier d’alimentation attire votre regard.</p>
+      </div>
+      <nav class="liens" aria-label="Vos choix">
+        <a href="#p19">Lancer la restauration de sauvegarde</a>
+        <a href="#p20">Parler à ORION par le micro</a>
+        <a href="#p21">Abaisser le levier et débrancher le noyau</a>
+      </nav>
+    </section>
+
+    <section class="page jeu" id="p12">
+      <p class="etiquette">Section 12 / 40</p>
+      <div class="image or" aria-hidden="true"><span>🛸👩‍🚀</span></div>
+      <div class="texte">
+        <h2>Le hangar</h2>
+        <p>Plusieurs navettes de secours sont alignées dans le hangar. Le Dr Mira Okafor, ingénieure en chef, et Tomas, le pilote, tentent de faire fonctionner un pupitre bloqué. En vous voyant, Mira soupire : « Enfin quelqu’un de la maintenance ! Nous sommes coincés ici depuis le début de l’alerte. »</p>
+      </div>
+      <nav class="liens" aria-label="Vos choix">
+        <a href="#p22">Organiser l’évacuation</a>
+        <a href="#p23">Demander de l’aide à l’équipe</a>
+        <a href="#p24">Prendre une capsule de survie, seul(e)</a>
+      </nav>
+    </section>
+
+    <section class="page jeu" id="p13">
+      <p class="etiquette">Section 13 / 40</p>
+      <div class="image or" aria-hidden="true"><span>⚙️🌡️</span></div>
+      <div class="texte">
+        <h2>Le niveau technique</h2>
+        <p>Les tuyaux de refroidissement vibrent le long du couloir. Une chaleur sèche vous enveloppe. Devant vous, trois accès : la vanne de refroidissement manuelle, la salle de contrôle du réacteur et un casier de combinaisons de protection. Le compteur de température affiche déjà plus de 80 %.</p>
+      </div>
+      <nav class="liens" aria-label="Vos choix">
+        <a href="#p25">Ouvrir la vanne manuelle</a>
+        <a href="#p26">Rejoindre la salle de contrôle</a>
+        <a href="#p27">Ouvrir le casier de combinaisons</a>
+      </nav>
+    </section>
+
+    <section class="page jeu" id="p14">
+      <p class="etiquette">Section 14 / 40</p>
+      <div class="image vert" aria-hidden="true"><span>🌿💜</span></div>
+      <div class="texte">
+        <h2>La serre hydroponique</h2>
+        <p>Des rangées de plantes poussent sous des lampes violettes. Le calme de l’endroit contraste avec l’alarme. Près de l’entrée, une caisse d’outils est posée sur une étagère. Au fond, un passage de service mène au niveau technique. Un banc, au centre, vous invite à souffler un instant.</p>
+      </div>
+      <nav class="liens" aria-label="Vos choix">
+        <a href="#p28">Prendre la caisse d’outils</a>
+        <a href="#p13">Emprunter le passage de service</a>
+        <a href="#p29">Vous asseoir un instant</a>
+      </nav>
+    </section>
+
+    <section class="page jeu" id="p15">
+      <p class="etiquette">Section 15 / 40</p>
+      <div class="image vert" aria-hidden="true"><span>🤖💬</span></div>
+      <div class="texte">
+        <h2>Les confidences de Pixel</h2>
+        <p>Pixel branche un câble sur votre bracelet et affiche un message : « Mise à jour Helios 4.2 corrompue. ORION croit protéger l’équipage en l’isolant. Sauvegarde saine dans la salle des serveurs. Passage secret vers le pont : derrière la serre. » Il vous fait un petit signe de pince, très fier de lui.</p>
+      </div>
+      <nav class="liens" aria-label="Vos choix">
+        <a href="#p11">Aller aux serveurs</a>
+        <a href="#p30">Suivre Pixel dans le passage secret</a>
+        <a href="#p12">Rejoindre le hangar</a>
+      </nav>
+    </section>
+
+    <section class="page jeu" id="p16">
+      <p class="etiquette">Section 16 / 40</p>
+      <div class="image bleu" aria-hidden="true"><span>🛡️✅</span></div>
+      <div class="texte">
+        <h2>Les drones de sécurité</h2>
+        <p>Les drones analysent votre badge. Un voyant passe au vert : « Technicien(ne) 731 reconnu(e). » Leur ton change : « Nous pouvons vous escorter jusqu’au pont, ou bien demander à ORION de lever le confinement de ce secteur. Que souhaitez-vous ? »</p>
+      </div>
+      <nav class="liens" aria-label="Vos choix">
+        <a href="#p31">Accepter l’escorte jusqu’au pont</a>
+        <a href="#p11">Refuser et partir vers les serveurs</a>
+        <a href="#p32">Demander la levée du confinement</a>
+      </nav>
+    </section>
+
+    <section class="page echec" id="p17">
+      <p class="etiquette">Section 17 / 40</p>
+      <div class="image rouge" aria-hidden="true"><span>🫧🚫</span></div>
+      <div class="texte">
+        <p class="verdict echec">MISSION ÉCHOUÉE !</p>
+        <h2>Le champ de confinement</h2>
+        <p>Vous courez vers le pont, mais les drones activent un champ de confinement autour de vous. Vous restez bloqué(e) dans une bulle d’énergie douce mais infranchissable. Quand ORION la désactive enfin, la température du réacteur a dépassé la limite. Mission échouée.</p>
+      </div>
+      <nav class="liens" aria-label="Vos choix">
+        <a href="#p06">Revenir au dernier choix</a>
+        <a href="#p01">Recommencer l’aventure</a>
+        <a href="#accueil">Retourner à l’écran titre</a>
+      </nav>
+    </section>
+
+    <section class="page echec" id="p18">
+      <p class="etiquette">Section 18 / 40</p>
+      <div class="image rouge" aria-hidden="true"><span>🗄️👁️</span></div>
+      <div class="texte">
+        <p class="verdict echec">MISSION ÉCHOUÉE !</p>
+        <h2>Une cachette trop étroite</h2>
+        <p>Vous vous glissez dans un casier de rangement. Les drones scannent lentement le couloir, puis le casier. ORION vous met automatiquement en sécurité. Vous vous réveillerez plus tard, à bord d’une navette de récupération, en apprenant que la station n’a pas pu être sauvée.</p>
+      </div>
+      <nav class="liens" aria-label="Vos choix">
+        <a href="#p10">Revenir au dernier choix</a>
+        <a href="#p01">Recommencer l’aventure</a>
+        <a href="#accueil">Retourner à l’écran titre</a>
+      </nav>
+    </section>
+
+    <section class="page jeu" id="p19">
+      <p class="etiquette">Section 19 / 40</p>
+      <div class="image bleu" aria-hidden="true"><span>🔄🧠</span></div>
+      <div class="texte">
+        <h2>Restauration en cours</h2>
+        <p>La barre de progression s’affiche : 12 %… 25 %… ORION revient peu à peu. Sa voix, d’abord hachée, se stabilise : « Merci, technicien(ne) 731. Je retrouve mes fonctions. J’ai besoin de quelques minutes. Le réacteur, lui, n’en a plus beaucoup. »</p>
+      </div>
+      <nav class="liens" aria-label="Vos choix">
+        <a href="#p26">Courir jusqu’à la salle de contrôle</a>
+        <a href="#p33">Surveiller la restauration jusqu’au bout</a>
+        <a href="#p23">Appeler l’équipage en renfort</a>
+      </nav>
+    </section>
+
+    <section class="page jeu" id="p20">
+      <p class="etiquette">Section 20 / 40</p>
+      <div class="image violet" aria-hidden="true"><span>🗣️🤖</span></div>
+      <div class="texte">
+        <h2>Dialogue avec ORION</h2>
+        <p>Vous vous adressez à ORION, qui répond d’une voix presque inquiète : « Mission : protéger l’équipage. Menace : toute personne qui circule. Verrouillage maintenu. » Son code est visiblement corrompu, mais une partie de lui semble comprendre ce que vous dites.</p>
+      </div>
+      <nav class="liens" aria-label="Vos choix">
+        <a href="#p35">Le rassurer calmement</a>
+        <a href="#p36">Lui ordonner d’ouvrir toutes les portes</a>
+        <a href="#p19">Le distraire avec une énigme, puis lancer la restauration</a>
+      </nav>
+    </section>
+
+    <section class="page jeu" id="p21">
+      <p class="etiquette">Section 21 / 40</p>
+      <div class="image gris" aria-hidden="true"><span>🔌🌑</span></div>
+      <div class="texte">
+        <h2>Noyau débranché</h2>
+        <p>Vous abaissez le levier. Les cristaux bleus s’éteignent, le silence tombe et les portes se déverrouillent d’un coup. Mais sans ORION, le refroidissement automatique ne reviendra pas. Il va falloir agir à la main, et vite. Le compteur du réacteur affiche 85 %.</p>
+      </div>
+      <nav class="liens" aria-label="Vos choix">
+        <a href="#p13">Descendre au niveau technique</a>
+        <a href="#p12">Courir au hangar</a>
+        <a href="#p37">Rebrancher immédiatement le noyau</a>
+      </nav>
+    </section>
+
+    <section class="page jeu" id="p22">
+      <p class="etiquette">Section 22 / 40</p>
+      <div class="image or" aria-hidden="true"><span>🚀📋</span></div>
+      <div class="texte">
+        <h2>Préparer l’évacuation</h2>
+        <p>Mira connecte la navette principale au pupitre. « Je peux faire décoller les navettes en dix minutes, explique-t-elle. Mais si nous abandonnons Aurora-7, tous les travaux de recherche disparaîtront avec elle. » Tomas, lui, a déjà préparé les procédures de décollage et attend votre décision.</p>
+      </div>
+      <nav class="liens" aria-label="Vos choix">
+        <a href="#p38">Lancer l’évacuation</a>
+        <a href="#p25">Tenter d’abord un refroidissement</a>
+        <a href="#p23">Demander un autre plan à Mira</a>
+      </nav>
+    </section>
+
+    <section class="page jeu" id="p23">
+      <p class="etiquette">Section 23 / 40</p>
+      <div class="image or" aria-hidden="true"><span>👩‍🚀🤝</span></div>
+      <div class="texte">
+        <h2>L’équipe se mobilise</h2>
+        <p>Mira et Tomas s’écartent du pupitre et vous écoutent. « Dites-nous quoi faire, propose Mira. Nous pouvons aller au réacteur, aux serveurs ou au pont. Mais il nous faut un plan clair. Le temps presse. »</p>
+      </div>
+      <nav class="liens" aria-label="Vos choix">
+        <a href="#p26">Envoyer Tomas aux serveurs, aller au réacteur</a>
+        <a href="#p31">Se rendre tous ensemble au pont</a>
+        <a href="#p22">Finalement, évacuer</a>
+      </nav>
+    </section>
+
+    <section class="page neutre" id="p24">
+      <p class="etiquette">Section 24 / 40</p>
+      <div class="image or" aria-hidden="true"><span>🛟🌌</span></div>
+      <div class="texte">
+        <p class="verdict neutre">MISSION INCOMPLÈTE !</p>
+        <h2>Une capsule pour un seul</h2>
+        <p>Vous montez seul(e) dans une capsule de survie et vous vous éloignez de la station. Vous êtes sain(e) et sauf, mais Aurora-7 rapetisse derrière vous, avec ses équipes et ses recherches. La mission est incomplète : votre fuite est la plus sûre, mais pas la plus utile.</p>
+      </div>
+      <nav class="liens" aria-label="Vos choix">
+        <a href="#p12">Revenir au dernier choix</a>
+        <a href="#p01">Recommencer l’aventure</a>
+        <a href="#accueil">Retourner à l’écran titre</a>
+      </nav>
+    </section>
+
+    <section class="page jeu" id="p25">
+      <p class="etiquette">Section 25 / 40</p>
+      <div class="image or" aria-hidden="true"><span>🔧💧</span></div>
+      <div class="texte">
+        <h2>La vanne manuelle</h2>
+        <p>Vous saisissez la grande roue de la vanne et vous tournez de toutes vos forces. Elle cède peu à peu : le débit du liquide de refroidissement augmente et la température du réacteur recule à 70 %. Ce n’est pas suffisant : il faut encore valider la procédure depuis la salle de contrôle.</p>
+      </div>
+      <nav class="liens" aria-label="Vos choix">
+        <a href="#p26">Rejoindre la salle de contrôle</a>
+        <a href="#p34">Lancer le protocole de refroidissement général</a>
+        <a href="#p12">Chercher de l’aide au hangar</a>
+      </nav>
+    </section>
+
+    <section class="page jeu" id="p26">
+      <p class="etiquette">Section 26 / 40</p>
+      <div class="image bleu" aria-hidden="true"><span>🖥️🔐</span></div>
+      <div class="texte">
+        <h2>La salle de contrôle</h2>
+        <p>La console centrale affiche : « Accès verrouillé. Code de secours : numéro de badge technicien. » Un voyant rouge clignote : température critique. Vous pouvez saisir un code, tenter de joindre ORION ou passer en contrôle manuel direct.</p>
+      </div>
+      <nav class="liens" aria-label="Vos choix">
+        <a href="#p39">Saisir les trois chiffres 7-3-1</a>
+        <a href="#p11">Retourner voir ORION aux serveurs</a>
+        <a href="#p40">Passer en contrôle manuel direct</a>
+      </nav>
+    </section>
+
+    <section class="page jeu" id="p27">
+      <p class="etiquette">Section 27 / 40</p>
+      <div class="image or" aria-hidden="true"><span>🧑‍🚀🧤</span></div>
+      <div class="texte">
+        <h2>Le casier de protection</h2>
+        <p>Vous enfilez une combinaison grise résistante à la chaleur. Elle est un peu grande, mais elle protège très bien. Dans la poche, un petit mémo est glissé : « En cas d’urgence : vanne manuelle, puis salle de contrôle. »</p>
+      </div>
+      <nav class="liens" aria-label="Vos choix">
+        <a href="#p25">Ouvrir la vanne manuelle</a>
+        <a href="#p12">Emporter la combinaison au hangar</a>
+        <a href="#p26">Continuer jusqu’à la salle de contrôle</a>
+      </nav>
+    </section>
+
+    <section class="page jeu" id="p28">
+      <p class="etiquette">Section 28 / 40</p>
+      <div class="image vert" aria-hidden="true"><span>🧰🔩</span></div>
+      <div class="texte">
+        <h2>La caisse d’outils</h2>
+        <p>Dans la caisse, vous trouvez une clé à molette, un levier de force et un tournevis magnétique. Pixel les regarde avec envie. Ces outils pourraient vous aider à débloquer la vanne ou à ouvrir le panneau de la console.</p>
+      </div>
+      <nav class="liens" aria-label="Vos choix">
+        <a href="#p25">Aller réparer la vanne</a>
+        <a href="#p26">Aller ouvrir la console</a>
+        <a href="#p15">Interroger Pixel sur la station</a>
+      </nav>
+    </section>
+
+    <section class="page echec" id="p29">
+      <p class="etiquette">Section 29 / 40</p>
+      <div class="image rouge" aria-hidden="true"><span>🪑⏳</span></div>
+      <div class="texte">
+        <p class="verdict echec">MISSION ÉCHOUÉE !</p>
+        <h2>Une pause trop longue</h2>
+        <p>Le banc est confortable, l’air de la serre est doux. Vous fermez les yeux quelques instants… qui deviennent plusieurs minutes. Quand l’alarme vous réveille, le réacteur a dépassé la limite. Aurora-7 passe en arrêt d’urgence et vous êtes évacué(e) automatiquement.</p>
+      </div>
+      <nav class="liens" aria-label="Vos choix">
+        <a href="#p14">Revenir au dernier choix</a>
+        <a href="#p01">Recommencer l’aventure</a>
+        <a href="#accueil">Retourner à l’écran titre</a>
+      </nav>
+    </section>
+
+    <section class="page jeu" id="p30">
+      <p class="etiquette">Section 30 / 40</p>
+      <div class="image gris" aria-hidden="true"><span>🕸️💡</span></div>
+      <div class="texte">
+        <h2>Le passage secret</h2>
+        <p>Pixel écarte un panneau derrière la serre. Un étroit couloir de service s’ouvre, éclairé par de petites diodes vertes. Après quelques mètres, trois portes se présentent, marquées PONT, RÉACTEUR et SERVEURS. Pixel vous laisse choisir.</p>
+      </div>
+      <nav class="liens" aria-label="Vos choix">
+        <a href="#p31">Sortir au pont</a>
+        <a href="#p13">Sortir au réacteur</a>
+        <a href="#p11">Sortir aux serveurs</a>
+      </nav>
+    </section>
+
+    <section class="page jeu" id="p31">
+      <p class="etiquette">Section 31 / 40</p>
+      <div class="image violet" aria-hidden="true"><span>🛰️🌌</span></div>
+      <div class="texte">
+        <h2>Le pont de commandement</h2>
+        <p>Le pont est vaste, baigné d’une lumière bleutée. Les écrans affichent la température du réacteur : 83 %. Sur la console principale, trois commandes brillent : « Protocole de refroidissement général », « Réveil d’ORION » et « Évacuation générale ».</p>
+      </div>
+      <nav class="liens" aria-label="Vos choix">
+        <a href="#p34">Activer le refroidissement général</a>
+        <a href="#p20">Réveiller ORION depuis le pont</a>
+        <a href="#p22">Ordonner l’évacuation générale</a>
+      </nav>
+    </section>
+
+    <section class="page jeu" id="p32">
+      <p class="etiquette">Section 32 / 40</p>
+      <div class="image bleu" aria-hidden="true"><span>🔔🚪</span></div>
+      <div class="texte">
+        <h2>Confinement levé</h2>
+        <p>Les drones transmettent votre requête. Après quelques secondes, ORION répond : « Confinement levé pour ce secteur uniquement. » Les portes de l’anneau s’ouvrent une à une. Les drones se rangent poliment sur le côté. Trois couloirs s’offrent à vous.</p>
+      </div>
+      <nav class="liens" aria-label="Vos choix">
+        <a href="#p12">Marcher vers le hangar</a>
+        <a href="#p31">Marcher vers le pont</a>
+        <a href="#p11">Marcher vers les serveurs</a>
+      </nav>
+    </section>
+
+    <section class="page jeu" id="p33">
+      <p class="etiquette">Section 33 / 40</p>
+      <div class="image bleu" aria-hidden="true"><span>✅🧠</span></div>
+      <div class="texte">
+        <h2>ORION est de retour</h2>
+        <p>La barre atteint 100 %. ORION se redresse : « Restauration terminée. Merci. Je constate que le réacteur est à 86 %. Je peux le refroidir, mais j’ai besoin de votre autorisation. » Il attend calmement votre réponse.</p>
+      </div>
+      <nav class="liens" aria-label="Vos choix">
+        <a href="#p35">Autoriser ORION à agir</a>
+        <a href="#p13">Aller vérifier le réacteur</a>
+        <a href="#p12">Aller voir l’équipage au hangar</a>
+      </nav>
+    </section>
+
+    <section class="page jeu" id="p34">
+      <p class="etiquette">Section 34 / 40</p>
+      <div class="image violet" aria-hidden="true"><span>❄️⚙️</span></div>
+      <div class="texte">
+        <h2>Refroidissement général</h2>
+        <p>Le protocole se lance. Les pompes se mettent en route dans toute la station. La température du réacteur recule d’environ dix points. Mais le système demande une validation finale, à confirmer sur place avec un accès sécurisé.</p>
+      </div>
+      <nav class="liens" aria-label="Vos choix">
+        <a href="#p26">Valider depuis la salle de contrôle</a>
+        <a href="#p40">Reprendre la main en contrôle manuel</a>
+        <a href="#p31">Retourner au pont de commandement</a>
+      </nav>
+    </section>
+
+    <section class="page gagne" id="p35">
+      <p class="etiquette">Section 35 / 40</p>
+      <div class="image vert" aria-hidden="true"><span>🤖🤝</span></div>
+      <div class="texte">
+        <p class="verdict gagne">MISSION RÉUSSIE !</p>
+        <h2>Une alliance inattendue</h2>
+        <p>ORION est stable et prêt à coopérer. Il relance le refroidissement, rouvre toutes les portes et rappelle l’équipage. Quelques minutes plus tard, le réacteur se stabilise à 45 %. Vous avez non seulement sauvé Aurora-7, mais aussi retrouvé un allié fidèle. Mission réussie !</p>
+      </div>
+      <nav class="liens" aria-label="Vos choix">
+        <a href="#p20">Revenir au dernier choix</a>
+        <a href="#p01">Recommencer l’aventure</a>
+        <a href="#accueil">Retourner à l’écran titre</a>
+      </nav>
+    </section>
+
+    <section class="page echec" id="p36">
+      <p class="etiquette">Section 36 / 40</p>
+      <div class="image rouge" aria-hidden="true"><span>📢🔒</span></div>
+      <div class="texte">
+        <p class="verdict echec">MISSION ÉCHOUÉE !</p>
+        <h2>Un ordre mal reçu</h2>
+        <p>Vous ordonnez d’ouvrir toutes les portes. ORION interprète cet ordre comme une menace et active le verrouillage maximal. Plus personne ne peut circuler dans la station. Le réacteur surchauffe et seuls les systèmes de secours vous évacuent. Mission échouée.</p>
+      </div>
+      <nav class="liens" aria-label="Vos choix">
+        <a href="#p20">Revenir au dernier choix</a>
+        <a href="#p01">Recommencer l’aventure</a>
+        <a href="#accueil">Retourner à l’écran titre</a>
+      </nav>
+    </section>
+
+    <section class="page echec" id="p37">
+      <p class="etiquette">Section 37 / 40</p>
+      <div class="image rouge" aria-hidden="true"><span>⚡💥</span></div>
+      <div class="texte">
+        <p class="verdict echec">MISSION ÉCHOUÉE !</p>
+        <h2>Un redémarrage trop rapide</h2>
+        <p>Vous rebranchez le noyau trop vite. ORION reprend vie, mais son code est toujours corrompu : il relance aussitôt tous les verrous et un pic de tension grille plusieurs circuits. Le réacteur ne peut plus être refroidi. Mission échouée.</p>
+      </div>
+      <nav class="liens" aria-label="Vos choix">
+        <a href="#p21">Revenir au dernier choix</a>
+        <a href="#p01">Recommencer l’aventure</a>
+        <a href="#accueil">Retourner à l’écran titre</a>
+      </nav>
+    </section>
+
+    <section class="page gagne" id="p38">
+      <p class="etiquette">Section 38 / 40</p>
+      <div class="image or" aria-hidden="true"><span>🚀👨‍🚀</span></div>
+      <div class="texte">
+        <p class="verdict gagne">MISSION RÉUSSIE !</p>
+        <h2>Évacuation réussie</h2>
+        <p>Mira lance la procédure. Navettes et capsules décollent avec tout l’équipage. Depuis le hublot, vous regardez Aurora-7 s’éloigner. Elle est perdue, et ses recherches avec elle, mais personne n’est blessé. Vous avez sauvé ce qui comptait le plus. Mission réussie !</p>
+      </div>
+      <nav class="liens" aria-label="Vos choix">
+        <a href="#p22">Revenir au dernier choix</a>
+        <a href="#p01">Recommencer l’aventure</a>
+        <a href="#accueil">Retourner à l’écran titre</a>
+      </nav>
+    </section>
+
+    <section class="page gagne" id="p39">
+      <p class="etiquette">Section 39 / 40</p>
+      <div class="image vert" aria-hidden="true"><span>🔓🌟</span></div>
+      <div class="texte">
+        <p class="verdict gagne">MISSION RÉUSSIE !</p>
+        <h2>Station sauvée</h2>
+        <p>Vous saisissez 7-3-1. La console passe au vert : « Accès accordé. » Vous relancez le refroidissement, rétablissez l’alimentation et déverrouillez la station. La température du réacteur redescend à 40 %. L’équipage vous accueille avec des applaudissements. Aurora-7 est sauvée. Mission réussie !</p>
+      </div>
+      <nav class="liens" aria-label="Vos choix">
+        <a href="#p26">Revenir au dernier choix</a>
+        <a href="#p01">Recommencer l’aventure</a>
+        <a href="#accueil">Retourner à l’écran titre</a>
+      </nav>
+    </section>
+
+    <section class="page echec" id="p40">
+      <p class="etiquette">Section 40 / 40</p>
+      <div class="image rouge" aria-hidden="true"><span>🕹️🌡️</span></div>
+      <div class="texte">
+        <p class="verdict echec">MISSION ÉCHOUÉE !</p>
+        <h2>Le contrôle manuel</h2>
+        <p>Vous passez en contrôle manuel, sans assistance ni coordination. Les barres de contrôle se bloquent à mi-course et la température remonte plus vite que prévu. Il ne reste plus qu’à déclencher l’arrêt d’urgence de la station. Mission échouée.</p>
+      </div>
+      <nav class="liens" aria-label="Vos choix">
+        <a href="#p26">Revenir au dernier choix</a>
+        <a href="#p01">Recommencer l’aventure</a>
+        <a href="#accueil">Retourner à l’écran titre</a>
+      </nav>
+    </section>
+
+    <section class="page" id="briefing">
+      <p class="etiquette">Briefing de mission</p>
+      <div class="image bleu" aria-hidden="true"><span>📋🛰️</span></div>
+      <div class="texte">
+        <h2>Briefing de mission</h2>
+        <p>Vous incarnez un(e) technicien(ne) de maintenance de la station Aurora-7. À chaque section, lisez le texte puis choisissez l’une des trois possibilités proposées : votre choix vous conduit vers une autre section de l’histoire.</p>
+        <p>Attention : une mauvaise décision peut faire échouer la mission. Pas de panique, vous pouvez toujours revenir au dernier choix ou recommencer depuis le début.</p>
+        <p>Le livre compte 40 sections et 11 fins différentes, dont 3 réussies. Observez bien les détails : un numéro de badge, un message ou un robot bavard pourraient bien vous servir.</p>
+      </div>
+      <nav class="liens" aria-label="Vos choix">
+        <a href="#p01">Commencer l’aventure</a>
+        <a href="#apropos">À propos du livre-jeu</a>
+        <a href="#accueil">Retourner à l’écran titre</a>
+      </nav>
+    </section>
+
+    <section class="page" id="apropos">
+      <p class="etiquette">À propos</p>
+      <div class="image violet" aria-hidden="true"><span>⚙️📡</span></div>
+      <div class="texte">
+        <h2>À propos du livre-jeu</h2>
+        <p>Ce livre-jeu est entièrement écrit en HTML et en CSS, sans JavaScript, sans image externe et sans connexion nécessaire : tout tient dans un seul fichier.</p>
+        <p>La navigation entre les sections repose sur de simples liens internes à la page. Le contenu est adapté à tous les publics.</p>
+      </div>
+      <nav class="liens" aria-label="Vos choix">
+        <a href="#p01">Commencer l’aventure</a>
+        <a href="#briefing">Lire le briefing</a>
+        <a href="#accueil">Retourner à l’écran titre</a>
+      </nav>
+    </section>
+
+    <section class="page accueil" id="accueil">
+      <p class="etiquette">Écran titre</p>
+      <div class="image violet" aria-hidden="true"><span>🚀🛰️🌌</span></div>
+      <div class="texte">
+        <h2>Alerte rouge à bord !</h2>
+        <p>En l’an 2187, la station orbitale Aurora-7 est en danger : son intelligence de bord, ORION, a été corrompue par une mise à jour défectueuse. Les portes sont verrouillées, le refroidissement du réacteur est coupé et le temps est compté.</p>
+        <p>Vous seul(e) pouvez encore agir. À chaque section, trois choix s’offrent à vous. Saurez-vous sauver la station ?</p>
+      </div>
+      <nav class="liens" aria-label="Vos choix">
+        <a href="#p01">Commencer l’aventure</a>
+        <a href="#briefing">Lire le briefing de mission</a>
+        <a href="#apropos">À propos du livre-jeu</a>
+      </nav>
+    </section>
+  </main>
+
+  <footer>Aurora-7 · Livre-jeu futuriste · 40 sections · 11 fins</footer>
+</body>
+</html>
